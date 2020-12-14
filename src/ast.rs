@@ -1,33 +1,34 @@
-use super::token;
-use super::token::Token;
+use super::lex;
+use super::lex::Token;
 use std::iter::*;
 use std::slice::Iter;
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
-    BinOp(token::Operator, Box<Expr>, Box<Expr>),
+    BinOp(lex::Operator, Box<Expr>, Box<Expr>),
     Neg(Box<Expr>),
-    Function(token::Function, Box<Expr>),
+    Function(lex::Function, Box<Expr>),
     Constance(f64),
 }
 
 #[derive(Debug)]
 pub enum ExprError {
     ExprInvalidParenthes,
-    ExprInvalidFactor(Option<token::Token>),
+    ExprInvalidFactor(Option<lex::Token>),
 }
 
+/// 生成表达式树
 /// 运算法则优先级 (+ -) (* / %) (^) (sin cos tan log) (取反)
-pub fn expr_parser(tokens: &[token::Token]) -> Result<Expr, ExprError> {
+pub fn expr_parser(tokens: &[lex::Token]) -> Result<Expr, ExprError> {
     additive_expr(&mut tokens.iter().peekable())
 }
 
-fn additive_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprError> {
+fn additive_expr(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
     let mut expr = multiplicative_expr(token)?;
     loop {
         match token.peek() {
             Some(Token::Operator(op))
-                if op == &token::Operator::Plus || op == &token::Operator::Minus =>
+                if op == &lex::Operator::Plus || op == &lex::Operator::Minus =>
             {
                 token.next();
                 let next_expr = multiplicative_expr(token)?;
@@ -38,14 +39,14 @@ fn additive_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprE
     }
     Ok(expr)
 }
-fn multiplicative_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprError> {
+fn multiplicative_expr(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
     let mut expr = parenthetical_multiplicative_expr(token)?;
     loop {
         match token.peek() {
             Some(Token::Operator(op))
-                if op == &token::Operator::Star
-                    || op == &token::Operator::Slash
-                    || op == &token::Operator::Percent =>
+                if op == &lex::Operator::Star
+                    || op == &lex::Operator::Slash
+                    || op == &lex::Operator::Percent =>
             {
                 token.next();
                 let new_expr = parenthetical_multiplicative_expr(token)?;
@@ -59,18 +60,17 @@ fn multiplicative_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr,
 
 //a(b)==a*(b)
 fn parenthetical_multiplicative_expr(
-    token: &mut Peekable<Iter<token::Token>>,
+    token: &mut Peekable<Iter<lex::Token>>,
 ) -> Result<Expr, ExprError> {
     let mut expr = power_expr(token)?;
     loop {
         match token.peek() {
-            Some(Token::Operator(token::Operator::LParen)) => {
+            Some(Token::Operator(lex::Operator::LParen)) => {
                 token.next();
                 let new_expr = additive_expr(token)?;
                 match token.next() {
-                    Some(Token::Operator(token::Operator::RParen)) => {
-                        expr =
-                            Expr::BinOp(token::Operator::Star, Box::new(expr), Box::new(new_expr));
+                    Some(Token::Operator(lex::Operator::RParen)) => {
+                        expr = Expr::BinOp(lex::Operator::Star, Box::new(expr), Box::new(new_expr));
                     }
                     _ => return Err(ExprError::ExprInvalidParenthes),
                 }
@@ -81,14 +81,14 @@ fn parenthetical_multiplicative_expr(
     Ok(expr)
 }
 
-fn power_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprError> {
+fn power_expr(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
     let mut expr = factor(token)?;
     loop {
         match token.peek() {
-            Some(Token::Operator(token::Operator::Caret)) => {
+            Some(Token::Operator(lex::Operator::Caret)) => {
                 token.next();
                 let new_expr = factor(token)?;
-                expr = Expr::BinOp(token::Operator::Caret, Box::new(expr), Box::new(new_expr));
+                expr = Expr::BinOp(lex::Operator::Caret, Box::new(expr), Box::new(new_expr));
             }
             _ => break,
         }
@@ -96,20 +96,20 @@ fn power_expr(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprErro
     Ok(expr)
 }
 //基本因子
-fn factor(token: &mut Peekable<Iter<token::Token>>) -> Result<Expr, ExprError> {
+fn factor(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
     match token.next() {
-        Some(Token::Operator(token::Operator::LParen)) => {
+        Some(Token::Operator(lex::Operator::LParen)) => {
             let expr = additive_expr(token)?;
             match token.next() {
-                Some(Token::Operator(token::Operator::RParen)) => Ok(expr),
+                Some(Token::Operator(lex::Operator::RParen)) => Ok(expr),
                 _ => Err(ExprError::ExprInvalidParenthes),
             }
         }
         Some(Token::Function(fun)) => Ok(Expr::Function(*fun, Box::new(factor(token)?))),
-        Some(Token::Operator(token::Operator::Minus)) => Ok(Expr::Neg(Box::new(factor(token)?))),
+        Some(Token::Operator(lex::Operator::Minus)) => Ok(Expr::Neg(Box::new(factor(token)?))),
         Some(Token::Constance(c)) => match c {
-            &token::Constance::PI => Ok(Expr::Constance(std::f64::consts::PI)),
-            &token::Constance::E => Ok(Expr::Constance(std::f64::consts::E)),
+            &lex::Constance::PI => Ok(Expr::Constance(std::f64::consts::PI)),
+            &lex::Constance::E => Ok(Expr::Constance(std::f64::consts::E)),
             _ => Err(ExprError::ExprInvalidFactor(Some(Token::Constance(*c)))),
         },
         Some(Token::Number(v)) => Ok(Expr::Constance(*v)),
@@ -124,19 +124,19 @@ mod tests {
     #[test]
     fn it_works() {
         use super::expr_parser;
-        use super::token;
-        use super::token::Token;
+        use super::lex;
+        use super::lex::Token;
         use super::Expr;
         use super::ExprError;
         //1+2
         let tokens: Vec<Token> = vec![
             Token::Number(1 as f64),
-            Token::Operator(token::Operator::Plus),
+            Token::Operator(lex::Operator::Plus),
             Token::Number(2 as f64),
         ];
         let v = expr_parser(&tokens[..]).unwrap_or_else(|e| Expr::Constance(0 as f64));
         let r = Expr::BinOp(
-            token::Operator::Plus,
+            lex::Operator::Plus,
             Box::new(Expr::Constance(1 as f64)),
             Box::new(Expr::Constance(2 as f64)),
         );

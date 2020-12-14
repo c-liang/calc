@@ -1,9 +1,8 @@
+mod ast;
 mod evaluate;
-mod parser;
-mod token;
+mod lex;
 fn main() {
-    let c = evaluate::eval(
-        &parser::expr_parser(&(token::token_parser("sin(pi/6)").unwrap()[..])).unwrap(),
-    );
+    let c =
+        evaluate::eval(&ast::expr_parser(&(lex::token_parser("sin(pi/6)").unwrap()[..])).unwrap());
     println!("{}", c);
 }

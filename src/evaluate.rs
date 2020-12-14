@@ -1,34 +1,35 @@
-use super::parser;
-use super::token;
+use super::ast;
+use super::lex;
 
-pub fn eval(expr: &parser::Expr) -> f64 {
+pub fn eval(expr: &ast::Expr) -> f64 {
     match expr {
-        parser::Expr::BinOp(op, expr1, expr2) => {
+        ast::Expr::BinOp(op, expr1, expr2) => {
             let (num1, num2) = (eval(expr1), eval(expr2));
             match op {
-                token::Operator::Plus => num1 + num2,
-                token::Operator::Minus => num1 - num2,
-                token::Operator::Star => num1 * num2,
-                token::Operator::Slash => num1 / num2,
-                token::Operator::Percent => num1 % num2,
-                token::Operator::Caret => num1.powf(num2),
+                lex::Operator::Plus => num1 + num2,
+                lex::Operator::Minus => num1 - num2,
+                lex::Operator::Star => num1 * num2,
+                lex::Operator::Slash => num1 / num2,
+                lex::Operator::Percent => num1 % num2,
+                lex::Operator::Caret => num1.powf(num2),
                 _ => todo!(),
             }
         }
-        parser::Expr::Function(func, expr1) => {
+        ast::Expr::Function(func, expr1) => {
             let num = eval(expr1);
             match func {
-                token::Function::Sqrt => num.sqrt(),
-                token::Function::Sin => num.sin(),
-                token::Function::Cos => num.cos(),
-                token::Function::Tan => num.tan(),
-                token::Function::Log => num.log10(),
-                token::Function::Ln => num.ln(),
+                lex::Function::Sqrt => num.sqrt(),
+                lex::Function::Sin => num.sin(),
+                lex::Function::Cos => num.cos(),
+                lex::Function::Tan => num.tan(),
+                lex::Function::Log => num.log10(),
+                lex::Function::Ln => num.ln(),
+                lex::Function::Lg => num.log2(),
                 _ => todo!(),
             }
         }
-        parser::Expr::Neg(e) => -eval(e),
-        parser::Expr::Constance(v) => *v,
+        ast::Expr::Neg(e) => -eval(e),
+        ast::Expr::Constance(v) => *v,
         _ => todo!(),
     }
 }
@@ -39,18 +40,16 @@ mod tests {
     fn it_works() {
         assert_eq!(
             super::eval(
-                &super::parser::expr_parser(
-                    &(super::token::token_parser("12.3+12.0").unwrap()[..])
-                )
-                .unwrap(),
+                &super::ast::expr_parser(&(super::lex::token_parser("12.3+12.0").unwrap()[..]))
+                    .unwrap(),
             ),
             12.3 + 12.0
         );
 
         assert_eq!(
             super::eval(
-                &super::parser::expr_parser(
-                    &(super::token::token_parser("sin(12.0) + 10.0 * 2.5 + 7").unwrap()[..])
+                &super::ast::expr_parser(
+                    &(super::lex::token_parser("sin(12.0) + 10.0 * 2.5 + 7").unwrap()[..])
                 )
                 .unwrap(),
             ),
@@ -59,8 +58,8 @@ mod tests {
 
         assert_eq!(
             super::eval(
-                &super::parser::expr_parser(
-                    &(super::token::token_parser("sin(12.0) + 10.0 * 2.5 + ln7").unwrap()[..])
+                &super::ast::expr_parser(
+                    &(super::lex::token_parser("sin(12.0) + 10.0 * 2.5 + ln7").unwrap()[..])
                 )
                 .unwrap(),
             ),

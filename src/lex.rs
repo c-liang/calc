@@ -18,6 +18,7 @@ pub enum Function {
     Tan,
     Log,
     Ln,
+    Lg,
 }
 use self::Function::*;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -38,6 +39,7 @@ pub enum TokenError {
     InvalidNumber(String),
     InvalidIdentifier(String),
 }
+//lexical parser
 pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
     let characters: Vec<char> = inputs.chars().collect();
     let mut i = 0;
@@ -88,7 +90,8 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
                         "cos" => tokens.push(Token::Function(Cos)),
                         "tan" => tokens.push(Token::Function(Tan)),
                         "log" => tokens.push(Token::Function(Log)),
-                        "ln" => tokens.push(Token::Function(Function::Ln)),
+                        "ln" => tokens.push(Token::Function(Ln)),
+                        "lg" => tokens.push(Token::Function(Lg)),
                         _ => return Err(TokenError::InvalidIdentifier(id)),
                     }
                     continue;
@@ -146,6 +149,10 @@ mod tests {
         assert_eq!(
             token_parser("ln2").unwrap_or_default(),
             vec![Token::Function(super::Function::Ln), Number(2 as f64),]
+        );
+        assert_eq!(
+            token_parser("lg2").unwrap_or_default(),
+            vec![Token::Function(super::Function::Lg), Number(2 as f64),]
         );
     }
 }
