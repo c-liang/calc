@@ -23,6 +23,7 @@ pub fn eval(expr: &parser::Expr) -> f64 {
                 token::Function::Cos => num.cos(),
                 token::Function::Tan => num.tan(),
                 token::Function::Log => num.log10(),
+                token::Function::Ln => num.ln(),
                 _ => todo!(),
             }
         }
@@ -54,6 +55,16 @@ mod tests {
                 .unwrap(),
             ),
             (12.0 as f64).sin() + 10.0 * 2.5 + 7 as f64
+        );
+
+        assert_eq!(
+            super::eval(
+                &super::parser::expr_parser(
+                    &(super::token::token_parser("sin(12.0) + 10.0 * 2.5 + ln7").unwrap()[..])
+                )
+                .unwrap(),
+            ),
+            (12.0 as f64).sin() + 10.0 * 2.5 + (7 as f64).ln() as f64
         );
     }
 }

@@ -17,6 +17,7 @@ pub enum Function {
     Cos,
     Tan,
     Log,
+    Ln,
 }
 use self::Function::*;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -87,6 +88,7 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
                         "cos" => tokens.push(Token::Function(Cos)),
                         "tan" => tokens.push(Token::Function(Tan)),
                         "log" => tokens.push(Token::Function(Log)),
+                        "ln" => tokens.push(Token::Function(Function::Ln)),
                         _ => return Err(TokenError::InvalidIdentifier(id)),
                     }
                     continue;
@@ -140,6 +142,10 @@ mod tests {
                 Number(1 as f64),
                 Operator(Operator::RParen),
             ]
+        );
+        assert_eq!(
+            token_parser("ln2").unwrap_or_default(),
+            vec![Token::Function(super::Function::Ln), Number(2 as f64),]
         );
     }
 }
