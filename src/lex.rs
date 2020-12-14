@@ -107,8 +107,6 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{token_parser, Constance};
-
     #[test]
     fn it_works() {
         use super::Operator;

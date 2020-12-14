@@ -25,12 +25,10 @@ pub fn eval(expr: &ast::Expr) -> f64 {
                 lex::Function::Log => num.log10(),
                 lex::Function::Ln => num.ln(),
                 lex::Function::Lg => num.log2(),
-                _ => todo!(),
             }
         }
         ast::Expr::Neg(e) => -eval(e),
         ast::Expr::Constance(v) => *v,
-        _ => todo!(),
     }
 }
 

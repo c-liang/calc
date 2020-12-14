@@ -110,7 +110,6 @@ fn factor(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
         Some(Token::Constance(c)) => match c {
             &lex::Constance::PI => Ok(Expr::Constance(std::f64::consts::PI)),
             &lex::Constance::E => Ok(Expr::Constance(std::f64::consts::E)),
-            _ => Err(ExprError::ExprInvalidFactor(Some(Token::Constance(*c)))),
         },
         Some(Token::Number(v)) => Ok(Expr::Constance(*v)),
         Some(t) => Err(ExprError::ExprInvalidFactor(Some(t.clone()))),
@@ -120,21 +119,19 @@ fn factor(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{expr_parser, Expr};
     #[test]
     fn it_works() {
         use super::expr_parser;
         use super::lex;
         use super::lex::Token;
         use super::Expr;
-        use super::ExprError;
         //1+2
         let tokens: Vec<Token> = vec![
             Token::Number(1 as f64),
             Token::Operator(lex::Operator::Plus),
             Token::Number(2 as f64),
         ];
-        let v = expr_parser(&tokens[..]).unwrap_or_else(|e| Expr::Constance(0 as f64));
+        let v = expr_parser(&tokens[..]).unwrap_or_else(|_| Expr::Constance(0 as f64));
         let r = Expr::BinOp(
             lex::Operator::Plus,
             Box::new(Expr::Constance(1 as f64)),
