@@ -27,6 +27,7 @@ pub enum Function {
     Lg,
 }
 use self::Function::*;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Constance {
     PI,
