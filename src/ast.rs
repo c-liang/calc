@@ -65,11 +65,11 @@ fn parenthetical_multiplicative_expr(
     let mut expr = power_expr(token)?;
     loop {
         match token.peek() {
-            Some(Token::Operator(lex::Operator::LParen)) => {
+            Some(Token::Delimiters(lex::Delimiters::LParen)) => {
                 token.next();
                 let new_expr = additive_expr(token)?;
                 match token.next() {
-                    Some(Token::Operator(lex::Operator::RParen)) => {
+                    Some(Token::Delimiters(lex::Delimiters::RParen)) => {
                         expr = Expr::BinOp(lex::Operator::Star, Box::new(expr), Box::new(new_expr));
                     }
                     _ => return Err(ExprError::ExprInvalidParenthes),
@@ -98,20 +98,20 @@ fn power_expr(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError>
 //基本因子
 fn factor(token: &mut Peekable<Iter<lex::Token>>) -> Result<Expr, ExprError> {
     match token.next() {
-        Some(Token::Operator(lex::Operator::LParen)) => {
+        Some(Token::Delimiters(lex::Delimiters::LParen)) => {
             let expr = additive_expr(token)?;
             match token.next() {
-                Some(Token::Operator(lex::Operator::RParen)) => Ok(expr),
+                Some(Token::Delimiters(lex::Delimiters::RParen)) => Ok(expr),
                 _ => Err(ExprError::ExprInvalidParenthes),
             }
         }
         Some(Token::Function(fun)) => Ok(Expr::Function(*fun, Box::new(factor(token)?))),
         Some(Token::Operator(lex::Operator::Minus)) => Ok(Expr::Neg(Box::new(factor(token)?))),
-        Some(Token::Constance(c)) => match c {
+        Some(Token::Literals(lex::Literals::Constance(c))) => match c {
             &lex::Constance::PI => Ok(Expr::Constance(std::f64::consts::PI)),
             &lex::Constance::E => Ok(Expr::Constance(std::f64::consts::E)),
         },
-        Some(Token::Number(v)) => Ok(Expr::Constance(*v)),
+        Some(Token::Literals(lex::Literals::Number(v))) => Ok(Expr::Constance(*v)),
         Some(t) => Err(ExprError::ExprInvalidFactor(Some(t.clone()))),
         None => Err(ExprError::ExprInvalidFactor(None)),
     }
@@ -127,9 +127,9 @@ mod tests {
         use super::Expr;
         //1+2
         let tokens: Vec<Token> = vec![
-            Token::Number(1 as f64),
+            Token::Literals(lex::Literals::Number(1 as f64)),
             Token::Operator(lex::Operator::Plus),
-            Token::Number(2 as f64),
+            Token::Literals(lex::Literals::Number(2 as f64)),
         ];
         let v = expr_parser(&tokens[..]).unwrap_or_else(|_| Expr::Constance(0 as f64));
         let r = Expr::BinOp(

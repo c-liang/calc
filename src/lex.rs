@@ -6,10 +6,16 @@ pub enum Operator {
     Slash,
     Percent,
     Caret,
+}
+use self::Operator::*;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Delimiters {
     LParen,
     RParen,
 }
-use self::Operator::*;
+use self::Delimiters::*;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Function {
     Sqrt,
@@ -26,12 +32,20 @@ pub enum Constance {
     PI,
     E,
 }
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Literals {
+    Number(f64),
+    Constance(Constance),
+}
+use self::Literals::*;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Token {
-    Number(f64),
+    Literals(Literals),
     Operator(Operator),
     Function(Function),
-    Constance(Constance),
+    Delimiters(Delimiters),
 }
 #[derive(Debug)]
 pub enum TokenError {
@@ -52,10 +66,10 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
             '/' => tokens.push(Token::Operator(Slash)),
             '%' => tokens.push(Token::Operator(Percent)),
             '^' => tokens.push(Token::Operator(Caret)),
-            '(' => tokens.push(Token::Operator(LParen)),
-            ')' => tokens.push(Token::Operator(RParen)),
+            '(' => tokens.push(Token::Delimiters(LParen)),
+            ')' => tokens.push(Token::Delimiters(RParen)),
             '√' => tokens.push(Token::Function(Sqrt)),
-            'π' => tokens.push(Token::Constance(Constance::PI)),
+            'π' => tokens.push(Token::Literals(Constance(Constance::PI))),
             c => {
                 if c.is_whitespace() {
                     i += 1;
@@ -71,7 +85,7 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
                         i += 1;
                     }
                     match nums.parse::<f64>() {
-                        Ok(v) => tokens.push(Token::Number(v)),
+                        Ok(v) => tokens.push(Token::Literals(Number(v))),
                         Err(_) => return Err(TokenError::InvalidNumber(nums)),
                     }
                     continue;
@@ -83,8 +97,8 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
                         i += 1;
                     }
                     match &id.to_lowercase()[..] {
-                        "e" => tokens.push(Token::Constance(Constance::E)),
-                        "pi" => tokens.push(Token::Constance(Constance::PI)),
+                        "e" => tokens.push(Token::Literals(Constance(Constance::E))),
+                        "pi" => tokens.push(Token::Literals(Constance(Constance::PI))),
                         "sqrt" => tokens.push(Token::Function(Sqrt)),
                         "sin" => tokens.push(Token::Function(Sin)),
                         "cos" => tokens.push(Token::Function(Cos)),
@@ -109,6 +123,7 @@ pub fn token_parser(inputs: &str) -> Result<Vec<Token>, TokenError> {
 mod tests {
     #[test]
     fn it_works() {
+        use super::Delimiters;
         use super::Operator;
         use super::Token::*;
         use super::*;
@@ -116,41 +131,47 @@ mod tests {
             token_parser("log1+2*4+(1+2)").unwrap_or_default(),
             vec![
                 Token::Function(super::Function::Log),
-                Number(1 as f64),
+                Token::Literals(Number(1 as f64)),
                 Operator(Operator::Plus),
-                Number(2 as f64),
+                Token::Literals(Number(2 as f64)),
                 Operator(Operator::Star),
-                Number(4 as f64),
+                Token::Literals(Number(4 as f64)),
                 Operator(Operator::Plus),
-                Operator(Operator::LParen),
-                Number(1 as f64),
+                Delimiters(Delimiters::LParen),
+                Token::Literals(Number(1 as f64)),
                 Operator(Operator::Plus),
-                Number(2 as f64),
-                Operator(Operator::RParen),
+                Token::Literals(Number(2 as f64)),
+                Delimiters(Delimiters::RParen),
             ]
         );
         assert_eq!(
             token_parser("pi+π*4+sin(1)").unwrap_or_default(),
             vec![
-                Token::Constance(super::Constance::PI),
+                Token::Literals(Constance(super::Constance::PI)),
                 Operator(Operator::Plus),
-                Token::Constance(super::Constance::PI),
+                Token::Literals(Constance(super::Constance::PI)),
                 Operator(Operator::Star),
-                Number(4 as f64),
+                Token::Literals(Number(4 as f64)),
                 Operator(Operator::Plus),
                 Token::Function(super::Function::Sin),
-                Operator(Operator::LParen),
-                Number(1 as f64),
-                Operator(Operator::RParen),
+                Delimiters(Delimiters::LParen),
+                Token::Literals(Number(1 as f64)),
+                Delimiters(Delimiters::RParen),
             ]
         );
         assert_eq!(
             token_parser("ln2").unwrap_or_default(),
-            vec![Token::Function(super::Function::Ln), Number(2 as f64),]
+            vec![
+                Token::Function(super::Function::Ln),
+                Token::Literals(Number(2 as f64)),
+            ]
         );
         assert_eq!(
             token_parser("lg2").unwrap_or_default(),
-            vec![Token::Function(super::Function::Lg), Number(2 as f64),]
+            vec![
+                Token::Function(super::Function::Lg),
+                Token::Literals(Number(2 as f64)),
+            ]
         );
     }
 }
